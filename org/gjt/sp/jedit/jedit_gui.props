@@ -128,7 +128,7 @@ icons=22x22/actions/resize-horisontal.png \
 
 #{{{ Context menu
 view.context=
-#cut copy paste paste-previous paste-deleted -
+cut copy paste paste-previous paste-deleted -
 #select-block to-upper to-lower - hypersearch-word -
 #add-marker - collapse-fold expand-fold narrow-to-fold
 #}}}

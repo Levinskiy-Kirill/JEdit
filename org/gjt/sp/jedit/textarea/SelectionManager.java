@@ -161,10 +161,10 @@ class SelectionManager
 
 		textArea.invalidateLineRange(addMe.startLine,addMe.endLine);
 		try {
-			log.info(mapper.writeValueAsString(new LogSelection(
-					addMe.getStart(),
-					addMe.getEnd()
-			)));
+			int start = addMe.getStart();
+			int end = addMe.getEnd();
+			int length = end - start;
+			log.info(mapper.writeValueAsString(new LogSelection(start, end, textArea.getText(start, length))));
 		} catch (Exception e) {
 			Log.log(1, this, "Error writing json", e);
 		}
@@ -178,9 +178,9 @@ class SelectionManager
 	 */
 	void setSelection(Selection selection)
 	{
-		if (!this.selection.isEmpty() && selection ==null) {
+		if (!this.selection.isEmpty() && selection == null) {
 			try {
-				log.info(mapper.writeValueAsString(new LogSelectionClear()));
+				//log.info(mapper.writeValueAsString(new LogSelectionClear()));
 			} catch (Exception e) {
 				Log.log(1, this, "error while writing json", e);
 			}

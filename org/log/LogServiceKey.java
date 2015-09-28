@@ -26,24 +26,49 @@ import java.awt.event.KeyEvent;
 
 public class LogServiceKey extends LogKey {
 
+	private char keyChar;
+	private int deletedCharPosition;
+	
 	public LogServiceKey() {
 	}
 
 	@Override
 	public KeyEvent createEvent(Component source)
 	{
-		return new KeyEvent(source, 1, System.currentTimeMillis(), 0, keyCode, KeyEvent.CHAR_UNDEFINED);
+		return new KeyEvent(source, 1, System.currentTimeMillis(), 0, keyCode, keyChar);
 	}
 
 	public LogServiceKey(final int keyCode, final int position, final int mask) {
 		super(position, mask, keyCode);
 		this.type = LogEventTypes.SERVICE_KEY;
 	}
+	
+	public LogServiceKey(final int keyCode, final int position, final int mask, final char keyChar, int deletedCharPosition) {
+		super(position, mask, keyCode);
+		this.type = LogEventTypes.SERVICE_KEY;
+		this.keyChar = keyChar;
+		this.deletedCharPosition = deletedCharPosition;
+	}
 
+	public void setDeletedCharPosition(final int deletedCharPosition) {
+		this.deletedCharPosition = deletedCharPosition;
+	}
+	
+	public int getDeletedCharPosition() {
+		return deletedCharPosition;
+	}
+	
+	public void setKeyChar(final char keyChar) {
+		this.keyChar = keyChar;
+	}
+	
+	public char getKeyChar() {
+		return keyChar;
+	}
 
 	@Override
 	public String getStringForm() {
-		return String.format("Service key with key code %d. %d", keyCode, timestamp);
+		return String.format("Service key with key code %d. %d. Deleted character %c in position %d", keyCode, timestamp, keyChar, deletedCharPosition);
 	}
 
 }

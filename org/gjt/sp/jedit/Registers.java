@@ -77,7 +77,7 @@ import java.io.StringReader;
  */
 public class Registers
 {
-	private static Logger log = LoggerFactory.getLogger(Registers.class);
+	private static final Logger log = LoggerFactory.getLogger(Registers.class);
 	private static ObjectMapper mapper = new ObjectMapper();
 	//{{{ copy() method
 	/**
@@ -95,7 +95,7 @@ public class Registers
 			return;
 
 		try {
-			mapper.writeValueAsString(new LogCopy(selection));
+			log.info(mapper.writeValueAsString(new LogCopy(selection)));
 		} catch (Exception e) {
 			Log.log(Log.ERROR, null, "Cannot write copy action to json", e);
 		}
@@ -122,7 +122,7 @@ public class Registers
 			if(selection == null)
 				return;
 			try {
-				mapper.writeValueAsString(new LogCut(selection));
+				log.info(mapper.writeValueAsString(new LogCut(selection)));
 			} catch (Exception e) {
 				Log.log(Log.ERROR, null, "Cannot write cut action to json", e);
 			}
@@ -408,7 +408,7 @@ public class Registers
 			{
 				textArea.replaceSelection(selection);
 				try {
-					mapper.writeValueAsString(new LogPaste(textArea.getCaretPosition(), selection));
+					log.info(mapper.writeValueAsString(new LogPaste(textArea.getCaretPosition(), selection)));
 				} catch (Exception e) {
 					Log.log(Log.ERROR, null, "Cannot write paste action to json", e);
 				}

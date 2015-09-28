@@ -100,21 +100,11 @@ public class JEditTextArea extends TextArea
 		painter.setLineExtraSpacing(jEdit.getIntegerProperty("options.textarea.lineSpacing", 0));
 		EditBus.addToBus(this);
 
-		addKeyListener(new KeyListener() {
+		/*addKeyListener(new KeyListener() {
 			@Override
 			public void keyTyped(final KeyEvent e) {
-				if (isServiceKey(e)) {
-					final LogServiceKey key = new LogServiceKey(
-						e.getKeyCode(),
-						JEditTextArea.this.getCaretPosition(),
-						e.getModifiers()
-					);
-					try {
-						log.info(mapper.writeValueAsString(key));
-					} catch (Exception ex) {
-						Log.log(1, null, "cannot write json:\n", ex);
-					}
-				}
+				if (isServiceKey(e)) 
+					logServiceKey(e);
 			}
 
 			@Override
@@ -128,42 +118,23 @@ public class JEditTextArea extends TextArea
 					);
 					try {
 						log.info(mapper.writeValueAsString(key));
+						//log.info(mapper.writeValueAsString("CaretPosition: " + JEditTextArea.this.getCaretPosition()));
 					} catch (Exception ex) {
 						Log.log(1, null, "cannot write json:\n", ex);
 					}
-				} else if (isServiceKey(e)) {
-					final LogServiceKey key = new LogServiceKey(
-						e.getKeyCode(),
-						JEditTextArea.this.getCaretPosition(),
-						e.getModifiers()
-					);
-					try {
-						log.info(mapper.writeValueAsString(key));
-					} catch (Exception ex) {
-						Log.log(1, null, "cannot write json:\n", ex);
-					}
-				}
+				} else if (isServiceKey(e)) 
+					logServiceKey(e);
 			}
 
 			@Override
 			public void keyReleased(final KeyEvent e) {
-				if (isServiceKey(e)) {
-					final LogServiceKey key = new LogServiceKey(
-						e.getKeyCode(),
-						JEditTextArea.this.getCaretPosition(),
-						e.getModifiers()
-					);
-					try {
-						log.info(mapper.writeValueAsString(key));
-					} catch (Exception ex) {
-						Log.log(1, null, "cannot write json:\n", ex);
-					}
-				}
+				if (isServiceKey(e)) 
+					logServiceKey(e);
 			}
-		});
+		});*/
 	} //}}}
 
-	private static boolean isAltMask(final KeyEvent e) {
+	/*private static boolean isAltMask(final KeyEvent e) {
 		return (e.getModifiersEx() & KeyEvent.ALT_DOWN_MASK) == KeyEvent.ALT_DOWN_MASK;
 	}
 
@@ -187,8 +158,66 @@ public class JEditTextArea extends TextArea
 				|| keyCode == KeyEvent.VK_QUOTE
 				|| keyCode == KeyEvent.VK_BACK_QUOTE
 				|| keyCode == KeyEvent.VK_SPACE;
-	}
+	}*/
+	
+	/*private void logServiceKey(final KeyEvent e) {
+		final LogServiceKey key;
+		char deletedChar;
+		int position = getCaretPosition();
+		
+		//if(e.getKeyCode() == KeyEvent.VK_LEFT)
+			//position = getCaretPosition() != 0 ? ++position : position;
+		
+		//if(e.getKeyCode() == KeyEvent.VK_RIGHT)
+			//position = position = getCaretPosition() != 0 ? --position : position;
+		
+		if(isBackspaceKey(e)) {
+			try {
+				log.info(mapper.writeValueAsString(" caretPosition: " + JEditTextArea.this.getCaretPosition()));
+			} catch (Exception ex) {
+				Log.log(1, null, "cannot write json:\n", ex);
+			}
+			deletedChar = getText(position - 1, position).charAt(0);
+			key = new LogServiceKey(e.getKeyCode(), position, e.getModifiers(), deletedChar);
+			
+			try {
+				log.info(mapper.writeValueAsString("deleted char: " + deletedChar + " caretPosition: " + JEditTextArea.this.getCaretPosition()));
+			} catch (Exception ex) {
+				Log.log(1, null, "cannot write json:\n", ex);
+			}
+		} else if(isDeleteKey(e)) {
+			try {
+				log.info(mapper.writeValueAsString(" caretPosition: " + JEditTextArea.this.getCaretPosition()));
+			} catch (Exception ex) {
+				Log.log(1, null, "cannot write json:\n", ex);
+			}
+			deletedChar = getText(position, position + 1).charAt(0);
+			key = new LogServiceKey(e.getKeyCode(), position, e.getModifiers(), deletedChar);
+			
+			try {
+				log.info(mapper.writeValueAsString("deleted char: " + deletedChar + " caretPosition: " + JEditTextArea.this.getCaretPosition()));
+			} catch (Exception ex) {
+				Log.log(1, null, "cannot write json:\n", ex);
+			}
+		} else 
+			key = new LogServiceKey(e.getKeyCode(), position, e.getModifiers());
 
+		try {
+			log.info(mapper.writeValueAsString(key));
+			//log.info(mapper.writeValueAsString("CaretPosition: " + JEditTextArea.this.getCaretPosition()));
+		} catch (Exception ex) {
+			Log.log(1, null, "cannot write json:\n", ex);
+		}
+	}*/
+
+	/*private static boolean isDeleteKey(final KeyEvent event) {
+		return event.getKeyCode() == KeyEvent.VK_DELETE;
+	}
+	
+	private static boolean isBackspaceKey(KeyEvent event) {
+		return event.getKeyCode() == KeyEvent.VK_BACK_SPACE;
+	}
+	
 	private static boolean isServiceKey(final KeyEvent event) {
 		if (isCtrlMask(event) || isAltMask(event)) {
 			return false;
@@ -201,7 +230,7 @@ public class JEditTextArea extends TextArea
 				|| keyCode == KeyEvent.VK_DELETE
 				|| keyCode == KeyEvent.VK_CAPS_LOCK
 				|| keyCode == KeyEvent.VK_INSERT;
-	}
+	}*/
 
 	public void parseLog() {
 		try {
@@ -349,7 +378,7 @@ public class JEditTextArea extends TextArea
 	}
 
 	private boolean openLogFile() throws Exception {
-		JFileChooser chooser = new JFileChooser(System.getProperty("user.home"));
+		JFileChooser chooser = new JFileChooser(Paths.get("logs").toFile());
 		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			items = new ArrayList<LogItem>(ParseUtil.parseFile(chooser.getSelectedFile().getAbsolutePath()));
 			log.info("All items: " + items);

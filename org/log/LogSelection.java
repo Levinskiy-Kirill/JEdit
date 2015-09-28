@@ -27,17 +27,19 @@ public class LogSelection extends LogItem {
 
 	private int start;
 	private int end;
+	private String selectedText;
 
 	public LogSelection() {
 		super();
 	}
 
-	public LogSelection(final int start, final int end) {
+	public LogSelection(final int start, final int end, final String text) {
 		super();
 		assert end > start;
 		this.start = start;
 		this.end = end;
 		this.type = LogEventTypes.SELECTION;
+		this.selectedText = text;
 	}
 
 	public Selection createSelection() {
@@ -63,10 +65,18 @@ public class LogSelection extends LogItem {
 	public void setEnd(final int end) {
 		this.end = end;
 	}
+	
+	public String getSelectedText() {
+		return selectedText;
+	}
+
+	public void setSelectedText(String selectedText) {
+		this.selectedText = selectedText;
+	}
 
 	@Override
 	public String getStringForm() {
-		return String.format("Selection from %d to %d. %d", start, end, timestamp);
+		return String.format("Selection text %s from %d to %d. %d", selectedText, start, end, timestamp);
 	}
 
 }
