@@ -25,7 +25,6 @@ package org.gjt.sp.jedit.textarea;
 
 //{{{ Imports
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.gjt.sp.jedit.Debug;
 import org.gjt.sp.jedit.IPropertyManager;
 import org.gjt.sp.jedit.JEditActionContext;
@@ -45,6 +44,7 @@ import org.gjt.sp.util.StandardUtilities;
 import org.gjt.sp.util.ThreadUtilities;
 import org.log.LogCharacterKey;
 import org.log.LogServiceKey;
+import org.log.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,17 +92,14 @@ import java.util.TooManyListenersException;
  * @version $Id: TextArea.java 23365 2013-12-02 10:11:30Z kpouer $
  */
 public abstract class TextArea extends JComponent
-{
-	private static final Logger log = LoggerFactory.getLogger(JEditTextArea.class);
-	private ObjectMapper mapper = new ObjectMapper();
-	
+{	
 	//{{{ TextArea constructor
 	/**
 	 * Creates a new JEditTextArea.
 	 * @param propertyManager the property manager that contains informations like shortcut bindings
 	 * @param inputHandlerProvider the inputHandlerProvider
 	 */
-	
+	private static final Logger log = LoggerFactory.getLogger(TextArea.class);
 	protected TextArea(IPropertyManager propertyManager, InputHandlerProvider inputHandlerProvider)
 	{
 		this.inputHandlerProvider = inputHandlerProvider;
@@ -2289,6 +2286,7 @@ forward_scan:	do
 	{
 		if(newCaret < 0 || newCaret > buffer.getLength())
 		{
+			log.info("ERROR. NEW CARET: " + newCaret + " Buffer length: " + buffer.getLength());
 			throw new IllegalArgumentException("caret out of bounds: "
 				+ newCaret);
 		}
@@ -4754,7 +4752,7 @@ loop:		for(int i = lineNo - 1; i >= 0; i--)
 		String type = evt.paramString().split(",")[0];
 		switch(type) {
 			case "KEY_PRESSED" :
-				logKeyPressed(evt);
+				LogUtil.logKeyPressed(evt, this);
 				break;
 		}
 		
@@ -4763,91 +4761,6 @@ loop:		for(int i = lineNo - 1; i >= 0; i--)
 			super.processKeyEvent(evt);	
 
 	} //}}}
-
-	private void logKeyPressed(KeyEvent evt) {
-		if(isPrintableKey(evt)) {
-			final LogCharacterKey key = new LogCharacterKey(evt.getKeyChar(), caret, evt.getKeyCode(), evt.getModifiers());
-			try {
-				log.info(mapper.writeValueAsString(key));
-			} catch (Exception ex) {
-				Log.log(1, null, "cannot write json:\n", ex);
-			}
-		} else if(isServiceKey(evt)) {
-			final LogServiceKey key;
-			char deletedChar;
-
-			if(isKeyForSelection(evt)) {
-				return;
-			} else if(isBackspaceKey(evt)) {
-				deletedChar = getText(caret - 1, 1).charAt(0);
-				key = new LogServiceKey(evt.getKeyCode(), caret, evt.getModifiers(), deletedChar, caret - 1);
-			} else if(isDeleteKey(evt)) {
-				deletedChar = getText(caret, 1).charAt(0);
-				key = new LogServiceKey(evt.getKeyCode(), caret, evt.getModifiers(), deletedChar, caret);
-			} else {
-				key = new LogServiceKey(evt.getKeyCode(), caret, evt.getModifiers());
-			}
-			
-			try {
-				log.info(mapper.writeValueAsString(key));
-			} catch (Exception ex) {
-				Log.log(1, null, "cannot write json:\n", ex);
-			}
-		}
-	}
-	
-	private boolean isAltMask(final KeyEvent e) {
-		return (e.getModifiersEx() & KeyEvent.ALT_DOWN_MASK) == KeyEvent.ALT_DOWN_MASK;
-	}
-
-	private boolean isCtrlMask(final KeyEvent e) {
-		return (e.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) == KeyEvent.CTRL_DOWN_MASK;
-	}
-
-	private boolean isPrintableKey(final KeyEvent e) {
-		if (isAltMask(e) || isCtrlMask(e)) {
-			return false;
-		}
-		final int keyCode = e.getKeyCode();
-		if (keyCode >= KeyEvent.VK_COMMA && keyCode <= KeyEvent.VK_9) {
-			return true;
-		}
-		if (keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_CLOSE_BRACKET) {
-			return true;
-		}
-		return keyCode == KeyEvent.VK_SEMICOLON
-				|| keyCode == KeyEvent.VK_EQUALS
-				|| keyCode == KeyEvent.VK_QUOTE
-				|| keyCode == KeyEvent.VK_BACK_QUOTE
-				|| keyCode == KeyEvent.VK_SPACE;
-	}
-	
-	private boolean isKeyForSelection(final KeyEvent event) {
-		int keyCode = event.getKeyCode();
-		return (keyCode >= KeyEvent.VK_LEFT && keyCode<= KeyEvent.VK_DOWN) && event.getModifiers() == 1;
-	}
-	
-	private boolean isDeleteKey(final KeyEvent event) {
-		return event.getKeyCode() == KeyEvent.VK_DELETE;
-	}
-	
-	private boolean isBackspaceKey(KeyEvent event) {
-		return event.getKeyCode() == KeyEvent.VK_BACK_SPACE;
-	}
-	
-	private boolean isServiceKey(final KeyEvent event) {
-		if (isCtrlMask(event) || isAltMask(event)) {
-			return false;
-		}
-		int keyCode = event.getKeyCode();
-		return (keyCode >= KeyEvent.VK_LEFT && keyCode<= KeyEvent.VK_DOWN)
-				|| keyCode == KeyEvent.VK_TAB
-				|| keyCode == KeyEvent.VK_ENTER
-				|| keyCode == KeyEvent.VK_BACK_SPACE
-				|| keyCode == KeyEvent.VK_DELETE
-				|| keyCode == KeyEvent.VK_CAPS_LOCK
-				|| keyCode == KeyEvent.VK_INSERT;
-	}
 	
 	//{{{ addTopComponent() method
 	/**

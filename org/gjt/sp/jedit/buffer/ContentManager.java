@@ -56,6 +56,10 @@ class ContentManager
 				.concat(new String(text,gapEnd(),start + len - gapStart));
 		}
 	}
+	
+	public void setLength(int length) {
+		this.length = length;
+	}
 
 	/**
 	 * Returns the specified text range in a <code>Segment</code>.<p>

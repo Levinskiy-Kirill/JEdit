@@ -93,7 +93,7 @@ public class Registers
 		String selection = textArea.getSelectedText();
 		if(selection == null)
 			return;
-
+		
 		try {
 			log.info(mapper.writeValueAsString(new LogCopy(selection)));
 		} catch (Exception e) {
@@ -121,8 +121,12 @@ public class Registers
 			String selection = textArea.getSelectedText();
 			if(selection == null)
 				return;
+			
+			int selectionCount = textArea.getSelectionCount();
+			int startPosition = textArea.getSelection(selectionCount - 1).getStart();
+			
 			try {
-				log.info(mapper.writeValueAsString(new LogCut(selection)));
+				log.info(mapper.writeValueAsString(new LogCut(selection, startPosition)));
 			} catch (Exception e) {
 				Log.log(Log.ERROR, null, "Cannot write cut action to json", e);
 			}
@@ -408,7 +412,7 @@ public class Registers
 			{
 				textArea.replaceSelection(selection);
 				try {
-					log.info(mapper.writeValueAsString(new LogPaste(textArea.getCaretPosition(), selection)));
+					log.info(mapper.writeValueAsString(new LogPaste(textArea.getCaretPosition() - selection.length(), selection)));
 				} catch (Exception e) {
 					Log.log(Log.ERROR, null, "Cannot write paste action to json", e);
 				}

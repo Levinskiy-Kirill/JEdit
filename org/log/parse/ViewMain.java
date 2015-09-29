@@ -46,10 +46,10 @@ import java.util.List;
 
 public class ViewMain extends JFrame {
 
-	public static final int WINDOW_WIDTH = 800;
+	/*public static final int WINDOW_WIDTH = 800;
 	public static final int WINDOW_HEIGHT = 600;
 
-	private final Collection<LogItem> items = new ArrayList<LogItem>();
+	private final Collection<ArrayList<LogItem>> items = new ArrayList<ArrayList<LogItem>>();
 	private final JEditTextArea textArea;
 
 	static {
@@ -62,7 +62,7 @@ public class ViewMain extends JFrame {
 
 	public ViewMain(Collection<LogItem> items, JEditTextArea textArea) throws HeadlessException {
 		super();
-		this.items.addAll(items);
+		//this.items.addAll(items);
 		this.textArea = textArea;
 		setSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -91,7 +91,7 @@ public class ViewMain extends JFrame {
 			((GridBagLayout)getLayout()).columnWeights = new double[] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0E-4};
 			((GridBagLayout)getLayout()).rowWeights = new double[] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0E-4};
 			scrollPane.setPreferredSize(new Dimension(100, 200));
-			scrollPane.setViewportView(createList(items));
+			//scrollPane.setViewportView(createList(items));
 			add(scrollPane, new GridBagConstraints(0, 27, 6, 8, 0.0, 0.0,
 							       GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 							       new Insets(0, 0, 5, 0), 0, 0));
@@ -256,5 +256,5 @@ public class ViewMain extends JFrame {
 			return this;
 		}
 	}
-
+*/
 }

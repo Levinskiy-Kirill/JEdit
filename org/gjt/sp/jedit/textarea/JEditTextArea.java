@@ -43,13 +43,18 @@ import org.gjt.sp.util.Log;
 import org.log.LogCharacterKey;
 import org.log.LogEventTypes;
 import org.log.LogItem;
+import org.log.LogRun;
+import org.log.LogCompile;
 import org.log.LogSelection;
 import org.log.LogServiceKey;
+import org.log.LogUtil;
 import org.log.parse.ParseUtil;
+import org.log.parse.ViewMain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -62,6 +67,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 //}}}
@@ -83,7 +89,7 @@ public class JEditTextArea extends TextArea
 
 	private static final Logger log = LoggerFactory.getLogger(JEditTextArea.class);
 	private ObjectMapper mapper = new ObjectMapper();
-	private List<LogItem> items = new ArrayList<LogItem>();
+	private List<ArrayList<LogItem>> items = new ArrayList<ArrayList<LogItem>>();
 	private LogItem current;
 	private boolean hasSelection;
 
@@ -99,200 +105,24 @@ public class JEditTextArea extends TextArea
 		setRightClickPopupEnabled(true);
 		painter.setLineExtraSpacing(jEdit.getIntegerProperty("options.textarea.lineSpacing", 0));
 		EditBus.addToBus(this);
-
-		/*addKeyListener(new KeyListener() {
-			@Override
-			public void keyTyped(final KeyEvent e) {
-				if (isServiceKey(e)) 
-					logServiceKey(e);
-			}
-
-			@Override
-			public void keyPressed(final KeyEvent e) {
-				if (isPrintableKey(e)) {
-					final LogCharacterKey key = new LogCharacterKey(
-						e.getKeyChar(),
-						JEditTextArea.this.getCaretPosition(),
-						e.getKeyCode(),
-						e.getModifiers()
-					);
-					try {
-						log.info(mapper.writeValueAsString(key));
-						//log.info(mapper.writeValueAsString("CaretPosition: " + JEditTextArea.this.getCaretPosition()));
-					} catch (Exception ex) {
-						Log.log(1, null, "cannot write json:\n", ex);
-					}
-				} else if (isServiceKey(e)) 
-					logServiceKey(e);
-			}
-
-			@Override
-			public void keyReleased(final KeyEvent e) {
-				if (isServiceKey(e)) 
-					logServiceKey(e);
-			}
-		});*/
-	} //}}}
-
-	/*private static boolean isAltMask(final KeyEvent e) {
-		return (e.getModifiersEx() & KeyEvent.ALT_DOWN_MASK) == KeyEvent.ALT_DOWN_MASK;
-	}
-
-	private static boolean isCtrlMask(final KeyEvent e) {
-		return (e.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) == KeyEvent.CTRL_DOWN_MASK;
-	}
-
-	private static boolean isPrintableKey(final KeyEvent e) {
-		if (isAltMask(e) || isCtrlMask(e)) {
-			return false;
-		}
-		final int keyCode = e.getKeyCode();
-		if (keyCode >= KeyEvent.VK_COMMA && keyCode <= KeyEvent.VK_9) {
-			return true;
-		}
-		if (keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_CLOSE_BRACKET) {
-			return true;
-		}
-		return keyCode == KeyEvent.VK_SEMICOLON
-				|| keyCode == KeyEvent.VK_EQUALS
-				|| keyCode == KeyEvent.VK_QUOTE
-				|| keyCode == KeyEvent.VK_BACK_QUOTE
-				|| keyCode == KeyEvent.VK_SPACE;
-	}*/
-	
-	/*private void logServiceKey(final KeyEvent e) {
-		final LogServiceKey key;
-		char deletedChar;
-		int position = getCaretPosition();
-		
-		//if(e.getKeyCode() == KeyEvent.VK_LEFT)
-			//position = getCaretPosition() != 0 ? ++position : position;
-		
-		//if(e.getKeyCode() == KeyEvent.VK_RIGHT)
-			//position = position = getCaretPosition() != 0 ? --position : position;
-		
-		if(isBackspaceKey(e)) {
-			try {
-				log.info(mapper.writeValueAsString(" caretPosition: " + JEditTextArea.this.getCaretPosition()));
-			} catch (Exception ex) {
-				Log.log(1, null, "cannot write json:\n", ex);
-			}
-			deletedChar = getText(position - 1, position).charAt(0);
-			key = new LogServiceKey(e.getKeyCode(), position, e.getModifiers(), deletedChar);
-			
-			try {
-				log.info(mapper.writeValueAsString("deleted char: " + deletedChar + " caretPosition: " + JEditTextArea.this.getCaretPosition()));
-			} catch (Exception ex) {
-				Log.log(1, null, "cannot write json:\n", ex);
-			}
-		} else if(isDeleteKey(e)) {
-			try {
-				log.info(mapper.writeValueAsString(" caretPosition: " + JEditTextArea.this.getCaretPosition()));
-			} catch (Exception ex) {
-				Log.log(1, null, "cannot write json:\n", ex);
-			}
-			deletedChar = getText(position, position + 1).charAt(0);
-			key = new LogServiceKey(e.getKeyCode(), position, e.getModifiers(), deletedChar);
-			
-			try {
-				log.info(mapper.writeValueAsString("deleted char: " + deletedChar + " caretPosition: " + JEditTextArea.this.getCaretPosition()));
-			} catch (Exception ex) {
-				Log.log(1, null, "cannot write json:\n", ex);
-			}
-		} else 
-			key = new LogServiceKey(e.getKeyCode(), position, e.getModifiers());
-
-		try {
-			log.info(mapper.writeValueAsString(key));
-			//log.info(mapper.writeValueAsString("CaretPosition: " + JEditTextArea.this.getCaretPosition()));
-		} catch (Exception ex) {
-			Log.log(1, null, "cannot write json:\n", ex);
-		}
-	}*/
-
-	/*private static boolean isDeleteKey(final KeyEvent event) {
-		return event.getKeyCode() == KeyEvent.VK_DELETE;
 	}
 	
-	private static boolean isBackspaceKey(KeyEvent event) {
-		return event.getKeyCode() == KeyEvent.VK_BACK_SPACE;
-	}
-	
-	private static boolean isServiceKey(final KeyEvent event) {
-		if (isCtrlMask(event) || isAltMask(event)) {
-			return false;
-		}
-		int keyCode = event.getKeyCode();
-		return (keyCode >= KeyEvent.VK_LEFT && keyCode<= KeyEvent.VK_DOWN)
-				|| keyCode == KeyEvent.VK_TAB
-				|| keyCode == KeyEvent.VK_ENTER
-				|| keyCode == KeyEvent.VK_BACK_SPACE
-				|| keyCode == KeyEvent.VK_DELETE
-				|| keyCode == KeyEvent.VK_CAPS_LOCK
-				|| keyCode == KeyEvent.VK_INSERT;
-	}*/
-
 	public void parseLog() {
-		try {
-			if (openLogFile()) {
-				current = items.get(0);
-				log.info("Current action item: " + current);
-			}
-		} catch (Exception ex) {
-			Log.log(Log.ERROR, this, "Something went wrong", ex);
-		}
+		ParseUtil.parseLog(this, buffer);
 	}
 
 	public void compileBuffer(final Buffer toCompile) {
-		toCompile.save(getView(), toCompile.getPath());
-		final File output = Paths.get("out", "compileOut").toFile();
-		String path = Paths.get("out").toAbsolutePath().toString() + "/" + toCompile.getName();
-		toCompile.save(getView(), path);
-		ArrayList<String> commands = new ArrayList<>();
-		commands.add(jEdit.getProperty("java.compiler"));
-		commands.add(path);
-		try {
-			final Process process = new ProcessBuilder(commands).redirectOutput(output).start();
-			process.waitFor();
-			JOptionPane.showMessageDialog(this, getContentOfFile(output), "Output of compilation", JOptionPane.INFORMATION_MESSAGE);
-			Files.deleteIfExists(Paths.get("out", "compileOut"));
-		} catch (IOException e) {
-			JOptionPane.showMessageDialog(this, "Cannot open file for output of compiler");
-		} catch (InterruptedException e) {
-			JOptionPane.showMessageDialog(this, "Compiling was interrupted");
-		}
-	}
-
-	private String getContentOfFile(final File file) throws IOException {
-		BufferedReader br = Files.newBufferedReader(file.toPath(), Charset.defaultCharset());
-		final StringBuffer res = new StringBuffer();
-		String s;
-		while ((s = br.readLine()) != null) {
-			res.append(s);
-		}
-		br.close();
-		return res.toString();
+		LogUtil.compileBuffer(toCompile, this);
 	}
 
 	public void runBuffer(final Buffer toRun) throws IOException {
-		final File output = Paths.get("out", "runOut").toFile();
-		ArrayList<String> commands = new ArrayList<>();
-		commands.add(jEdit.getProperty("java.start"));
-		commands.add(toRun.getName().replace(".java", ""));
-		try {
-			final Process process = new ProcessBuilder(commands).directory(Paths.get("out").toFile()).redirectOutput(output).start();
-			process.waitFor();
-			JOptionPane.showMessageDialog(this, getContentOfFile(output), "Output of run:", JOptionPane.INFORMATION_MESSAGE);
-			Files.deleteIfExists(Paths.get("out", "runOut"));
-		} catch (IOException e) {
-			JOptionPane.showMessageDialog(this, "Cannot open file for output of compiler");
-		} catch (InterruptedException e) {
-			JOptionPane.showMessageDialog(this, "Run was interrupted");
-		}
+		LogUtil.runBuffer(toRun, this);
 	}
 
 	public void nextAction() {
-		log.info("Current in nextAction(): " + current);
+		log.info("IN PRESS NEXT ACTION AT TEXT AREA");
+		ParseUtil.nextAction();
+		/*log.info("Current in nextAction(): " + current);
 		if (current != null) {
 			log.info("Processing " + current);
 			try {
@@ -308,11 +138,11 @@ public class JEditTextArea extends TextArea
 			} else {
 				current = null;
 			}
-		}
+		}*/
 	}
 
 	private void pressKey(LogItem item) throws AWTException {
-		LogEventTypes type = item.getType();
+		/*LogEventTypes type = item.getType();
 		if (type == LogEventTypes.SERVICE_KEY) {
 			pressServiceKey((LogServiceKey)item);
 		} else if (type == LogEventTypes.CHARACTER_KEY) {
@@ -323,14 +153,14 @@ public class JEditTextArea extends TextArea
 		} else if (type == LogEventTypes.SELECTION_CLEAR) {
 			setCaretPosition(0);
 			hasSelection = false;
-		}
+		}*/
 	}
 
 	private void addSelection(final LogSelection item) {
 		this.setSelection(item.createSelection());
 	}
 
-	private void pressCharKey(final LogCharacterKey item) throws AWTException {
+	/*private void pressCharKey(final LogCharacterKey item) throws AWTException {
 		final Robot robot = new Robot();
 		ensurePosition(item.getPosition());
 		if (isShiftRequired(item)) { //Emulate characters with pressed shift
@@ -343,7 +173,7 @@ public class JEditTextArea extends TextArea
 			robot.keyRelease(item.getKeyCode());
 		}
 
-	}
+	}*/
 
 	private void ensurePosition(int position)
 	{
@@ -354,19 +184,19 @@ public class JEditTextArea extends TextArea
 		}
 	}
 
-	private boolean isShiftRequired(LogCharacterKey item)
+	/*private boolean isShiftRequired(LogCharacterKey item)
 	{
 		return item.getMask() == KeyEvent.SHIFT_MASK;
-	}
+	}*/
 
-	private void pressServiceKey(final LogServiceKey item) throws AWTException {
+	/*private void pressServiceKey(final LogServiceKey item) throws AWTException {
 		final Robot robot = new Robot();
 		ensurePosition(getCaretForServiceKey(item));
 		robot.keyPress(item.getKeyCode());
 		robot.keyRelease(item.getKeyCode());
-	}
+	}*/
 
-	private int getCaretForServiceKey(LogServiceKey item)
+/*	private int getCaretForServiceKey(LogServiceKey item)
 	{
 		if (item.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
 			return item.getPosition() + 1;
@@ -375,18 +205,7 @@ public class JEditTextArea extends TextArea
 		} else {
 			return item.getPosition();
 		}
-	}
-
-	private boolean openLogFile() throws Exception {
-		JFileChooser chooser = new JFileChooser(Paths.get("logs").toFile());
-		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			items = new ArrayList<LogItem>(ParseUtil.parseFile(chooser.getSelectedFile().getAbsolutePath()));
-			log.info("All items: " + items);
-			return true;
-		} else {
-			return false;
-		}
-	}
+	}	*/
 
 	//{{{ dispose() method
 	@Override

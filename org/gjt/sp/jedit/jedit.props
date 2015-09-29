@@ -162,13 +162,13 @@ largefilemode=ask
 buffer.encodingAutodetect=true
 
 # Tab width
-buffer.tabSize=8
+buffer.tabSize=4
 
 # Indent width
-buffer.indentSize=8
+buffer.indentSize=0
 
 # Automatic indentation
-buffer.autoIndent=full
+buffer.autoIndent=false
 
 # Soft tabs
 buffer.noTabs=false
@@ -529,5 +529,5 @@ available.lang=en de fr ja cs ru zh
 lang.usedefaultlocale=true
 lang.current=en
 
-java.compiler=/usr/lib/jvm/java-7-oracle/bin/javac
-java.start=/usr/lib/jvm/java-7-oracle/bin/java
+java.compiler=C:/Program Files/Java/jdk1.7.0_79/bin/javac
+java.start=C:/Program Files/Java/jdk1.7.0_79/bin/java
