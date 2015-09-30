@@ -43,6 +43,7 @@ import org.gjt.sp.util.Log;
 import org.log.LogCharacterKey;
 import org.log.LogEventTypes;
 import org.log.LogItem;
+import org.log.LogPaste;
 import org.log.LogRun;
 import org.log.LogCompile;
 import org.log.LogSelection;
@@ -120,92 +121,12 @@ public class JEditTextArea extends TextArea
 	}
 
 	public void nextAction() {
-		log.info("IN PRESS NEXT ACTION AT TEXT AREA");
 		ParseUtil.nextAction();
-		/*log.info("Current in nextAction(): " + current);
-		if (current != null) {
-			log.info("Processing " + current);
-			try {
-				pressKey(current);
-				log.info("Key pressed");
-			} catch (AWTException e) {
-			 	log.info("Cannot instantiate robot");
-			}
-			int nextIndex = items.indexOf(current) + 1;
-			if (items.size() > nextIndex) {
-				current = items.get(nextIndex);
-				log.info("Next item is " + current);
-			} else {
-				current = null;
-			}
-		}*/
 	}
-
-	private void pressKey(LogItem item) throws AWTException {
-		/*LogEventTypes type = item.getType();
-		if (type == LogEventTypes.SERVICE_KEY) {
-			pressServiceKey((LogServiceKey)item);
-		} else if (type == LogEventTypes.CHARACTER_KEY) {
-			pressCharKey((LogCharacterKey)item);
-		} else if (type == LogEventTypes.SELECTION) {
-			hasSelection = true;
-			addSelection((LogSelection)item);
-		} else if (type == LogEventTypes.SELECTION_CLEAR) {
-			setCaretPosition(0);
-			hasSelection = false;
-		}*/
+	
+	public void previousAction() {
+		ParseUtil.previousAction();
 	}
-
-	private void addSelection(final LogSelection item) {
-		this.setSelection(item.createSelection());
-	}
-
-	/*private void pressCharKey(final LogCharacterKey item) throws AWTException {
-		final Robot robot = new Robot();
-		ensurePosition(item.getPosition());
-		if (isShiftRequired(item)) { //Emulate characters with pressed shift
-			robot.keyPress(KeyEvent.VK_SHIFT);
-			robot.keyPress(item.getKeyCode());
-			robot.keyRelease(item.getKeyCode());
-			robot.keyRelease(KeyEvent.VK_SHIFT);
-		} else {
-			robot.keyPress(item.getKeyCode());
-			robot.keyRelease(item.getKeyCode());
-		}
-
-	}*/
-
-	private void ensurePosition(int position)
-	{
-		if (!hasSelection) {
-			setCaretPosition(position);
-		} else {
-			moveCaretPosition(position);
-		}
-	}
-
-	/*private boolean isShiftRequired(LogCharacterKey item)
-	{
-		return item.getMask() == KeyEvent.SHIFT_MASK;
-	}*/
-
-	/*private void pressServiceKey(final LogServiceKey item) throws AWTException {
-		final Robot robot = new Robot();
-		ensurePosition(getCaretForServiceKey(item));
-		robot.keyPress(item.getKeyCode());
-		robot.keyRelease(item.getKeyCode());
-	}*/
-
-/*	private int getCaretForServiceKey(LogServiceKey item)
-	{
-		if (item.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-			return item.getPosition() + 1;
-		} else if (buffer.getLength() < item.getPosition()) {
-			return buffer.getLength();
-		} else {
-			return item.getPosition();
-		}
-	}	*/
 
 	//{{{ dispose() method
 	@Override
