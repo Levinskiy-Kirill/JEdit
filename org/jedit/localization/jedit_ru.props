@@ -119,6 +119,7 @@ log.label=Операции с логом
 parse-log.label=Загрузить лог-файл
 next-action.label=Следующее действие
 previous-action.label=Предыдущее действие
+open-view-list.label=Список действий
 #}}}
 
 #{{{Run menu

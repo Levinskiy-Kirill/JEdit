@@ -121,11 +121,15 @@ public class JEditTextArea extends TextArea
 	}
 
 	public void nextAction() {
-		ParseUtil.nextAction();
+		ParseUtil.nextAction(false);
 	}
 	
 	public void previousAction() {
-		ParseUtil.previousAction();
+		ParseUtil.previousAction(false);
+	}
+	
+	public void openActionListView() {
+		ParseUtil.openActionListView();
 	}
 
 	//{{{ dispose() method

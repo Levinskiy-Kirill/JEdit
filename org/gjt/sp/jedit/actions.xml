@@ -34,6 +34,10 @@
 	<CODE>textArea.previousAction();</CODE>
 </ACTION>
 
+<ACTION NAME="open-view-list">
+	<CODE>textArea.openActionListView();</CODE>
+</ACTION>
+
 <ACTION NAME="about">
 	<CODE>
 		new AboutDialog(view);

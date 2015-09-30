@@ -139,10 +139,6 @@ public class JEditBuffer
 
 		setFoldHandler(new DummyFoldHandler());
 	} //}}}
-
-	public void setLength(int length) {
-		contentMgr.setLength(length);
-	}
 	
 	//{{{ Flags
 

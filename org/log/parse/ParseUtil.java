@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.AWTException;
-import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,29 +38,35 @@ import javax.swing.JOptionPane;
 
 public class ParseUtil {
 	private static final Logger log = LoggerFactory.getLogger(ParseUtil.class);
-	private static ObjectMapper mapper = new ObjectMapper();
+	private static ObjectMapper mapper = new ObjectMapper();;
 	
-	private static ArrayList<ArrayList<LogItem>> allItems;
+	private static ArrayList<ArrayList<LogItem>> allItems = null;
 	//private static ArrayList<LogItem> currentGroupSameItems;
 	private static int iterator = -2;
-	private static JEditTextArea textArea;
+	private static JEditTextArea textArea = null;
 	private static JEditBuffer buffer;
 	//private static LogItem current;
+	
+	public static void openActionListView() {
+		if(allItems == null || allItems.isEmpty() || textArea == null) {
+			JOptionPane.showMessageDialog(textArea, "Not open log file", "Message", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		ViewMain viewMain = new ViewMain(allItems, textArea);	
+	}
 	
 	public static void parseLog(JEditTextArea area, JEditBuffer buf) {
 		try {
 			buffer = buf;
 			textArea = area;
 			if (openLogFile()) {
-				//currentGroupSameItems = allItems.get(0);
 				iterator = 0;
 			}
 			else
 				log.info("Error open File");
 		} catch (Exception ex) {
 			Log.log(Log.ERROR, textArea, "Something went wrong", ex);
-		}
-		//ViewMain viewMain = new ViewMain(items, this);		
+		}	
 	}
 	
 	public static void parseFile(final String filename) throws Exception {
@@ -86,12 +91,21 @@ public class ParseUtil {
 						break;
 						
 					case SERVICE_KEY :
-						while(item.getType() == LogEventTypes.SERVICE_KEY) {
-							sameItemType.add(item);
-							item = readOneObject(br);
+						if(isDeletedKey(((LogServiceKey)item).getKeyCode())) {
+							while(item.getType() == LogEventTypes.SERVICE_KEY && isDeletedKey(((LogServiceKey)item).getKeyCode())) {
+								sameItemType.add(item);
+								item = readOneObject(br);
+							}
+							allItems.add(sameItemType);
+							sameItemType = new ArrayList<LogItem>();
+						} else {
+							while(item.getType() == LogEventTypes.SERVICE_KEY && !isDeletedKey(((LogServiceKey)item).getKeyCode())) {
+								sameItemType.add(item);
+								item = readOneObject(br);
+							}
+							allItems.add(sameItemType);
+							sameItemType = new ArrayList<LogItem>();
 						}
-						allItems.add(sameItemType);
-						sameItemType = new ArrayList<LogItem>();
 						break;
 						
 					case SELECTION :
@@ -112,53 +126,6 @@ public class ParseUtil {
 						item = readOneObject(br);
 				}
 			}
-			
-			/*while ((s = br.readLine()) != null && (!"".equals(s))) {
-				previous = current;
-				final LogItem item = mapper.readValue(s.getBytes(), LogItem.class);
-				current = getLogItem(s, item.getType(), mapper);
-				if(previous == null) {
-					sameItemType.add(current);
-					continue;
-				}
-				
-				if(current.getType() != LogEventTypes.CHARACTER_KEY && previous.getType() == LogEventTypes.CHARACTER_KEY) {
-					sameItemType.add(previous);
-				} else if(current.getType() != LogEventTypes.SERVICE_KEY && previous.getType() == LogEventTypes.SERVICE_KEY) {
-					sameItemType.add(previous);
-				} else if(current.getType() != LogEventTypes.SELECTION && previous.getType() == LogEventTypes.SELECTION) {
-					sameItemType.add(previous);
-				} else if(current.getType() != LogEventTypes.SELECTION && previous.getType() == LogEventTypes.SELECTION) {
-					sameItemType.add(previous);
-					allItems.add(sameItemType);
-					sameItemType = new ArrayList<LogItem>();
-					sameItemType.add(current);
-					continue;
-				}
-
-				allItems.add(sameItemType);
-				sameItemType = new ArrayList<LogItem>();
-				//sameItemType.add(current);
-
-					
-				
-				if(current.getType() == previous.getType()) {
-					if(current.getType() == LogEventTypes.SELECTION
-						||current.getType() == LogEventTypes.SAVE_ACTION) {
-						continue;
-					}
-					sameItemType.add(current);
-				}
-				else {
-					if(previous.getType() == LogEventTypes.SELECTION
-						|| previous.getType() == LogEventTypes.SAVE_ACTION) {
-						sameItemType.add(previous);
-					}
-					allItems.add(sameItemType);
-					sameItemType = new ArrayList<LogItem>();
-					sameItemType.add(current);
-				}
-			}*/
 		} finally {
 			if (br != null) {
 				try {
@@ -184,15 +151,13 @@ public class ParseUtil {
         return item;
     }
 	
-	public static void nextAction() {
+	public static void nextAction(boolean isSkip) {
 		if(iterator == -1) {
 			log.info("End of file");
 			return;
 		}
-		
-		log.info("IN PRESS NEXT ACTION AT PARSEUTIL. ITERATOR: " + iterator);
 
-		displayAction();
+		displayAction(isSkip);
 		if(iterator >= allItems.size())
 			iterator = -1;
 		else
@@ -232,33 +197,16 @@ public class ParseUtil {
 	
 	private static boolean openLogFile() throws Exception {
 		JFileChooser chooser = new JFileChooser(Paths.get("logs").toFile());
-
 		if (chooser.showOpenDialog(textArea) == JFileChooser.APPROVE_OPTION) {
 			ParseUtil.parseFile(chooser.getSelectedFile().getAbsolutePath());
-			
-			log.info("All items: ");
-			
-			for(ArrayList<LogItem> sameItems : allItems) {
-				for(LogItem item : sameItems) {
-					try {
-		                log.info(mapper.writeValueAsString(item));
-		            } catch (Exception e) {
-		                Log.log(Log.ERROR, null, "Cannot write copy action to json", e);
-		            }
-				}
-				log.info("");
-				log.info("");
-				log.info("");
-			}
-
 			return true;
 		} else {
 			return false;
 		}
 	}
 	
-	private static void displayAction() {
-		log.info("IN DISPLAY ACTION");
+	private static void displayAction(boolean isSkip) {
+		log.info("IN DISPLAY ACTION. ITERATOR: " + iterator);
 		ArrayList<LogItem> sameItems = allItems.get(iterator);
 		LogEventTypes type = sameItems.get(0).getType();
 		
@@ -277,10 +225,12 @@ public class ParseUtil {
 				textArea.setSelection(selection.createSelection());				
 				break;
 				
-			case CUT_ACTION :			
+			case CUT_ACTION :
 				LogCut cut = (LogCut)sameItems.get(0);
 				simulateCutAction(cut);
-				JOptionPane.showMessageDialog(textArea, cut.getText(), "Cut action", JOptionPane.INFORMATION_MESSAGE);			
+				if(!isSkip) {
+					JOptionPane.showMessageDialog(textArea, cut.getText(), "Cut action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case PASTE_ACTION :
@@ -290,35 +240,46 @@ public class ParseUtil {
 				if(iterator != 0) {
 					previousSameItems = allItems.get(iterator - 1);
 					previousItem = previousSameItems.get(previousSameItems.size() - 1);
-					simulatePasteAction(paste, previousItem);
+					simulatePasteAction(paste, previousItem, isSkip);
 				} else
-					simulatePasteAction(paste, null);
+					simulatePasteAction(paste, null, isSkip);
 				
 				break;
 				
 			case COPY_ACTION :
-				LogCopy copy = (LogCopy)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, copy.getText(), "Copy action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogCopy copy = (LogCopy)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, copy.getText(), "Copy action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case COMPILE_ACTION :
-				LogCompile compile = (LogCompile)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, compile.getText(), "Compile action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogCompile compile = (LogCompile)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, compile.getText(), "Compile action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case RUN_ACTION :
-				LogRun run = (LogRun)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, run.getText(), "Run action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogRun run = (LogRun)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, run.getText(), "Run action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case SAVE_ACTION :
-				LogSaveFile save = (LogSaveFile)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, save.getPath(), "Save action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogSaveFile save = (LogSaveFile)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, save.getPath(), "Save action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
+				
+			default :
+				log.info("No this type: " + type);	
 		}
 	}
 	
-	public static void previousAction() {
+	public static void previousAction(boolean isSkip) {
 		if(iterator == -1)
 			iterator = allItems.size() - 1;
 		else if(iterator <= 0) {
@@ -327,10 +288,10 @@ public class ParseUtil {
 		}
 		
 		--iterator;
-		deleteAction();
+		deleteAction(isSkip);
 	}
 	
-	private static void deleteAction() {
+	private static void deleteAction(boolean isSkip) {
 		ArrayList<LogItem> sameItems = allItems.get(iterator);
 		LogEventTypes type = sameItems.get(0).getType();
 		
@@ -350,7 +311,7 @@ public class ParseUtil {
 				break;
 				
 			case CUT_ACTION :			
-				deleteCutAction(sameItems);			
+				deleteCutAction(sameItems, isSkip);			
 				break;
 				
 			case PASTE_ACTION :
@@ -360,67 +321,57 @@ public class ParseUtil {
 				if(iterator != 0) {
 					previousSameItems = allItems.get(iterator - 1);
 					previousItem = previousSameItems.get(previousSameItems.size() - 1);
-					deletePasteAction(paste, previousItem);
+					deletePasteAction(paste, previousItem, isSkip);
 				} else
-					deletePasteAction(paste, null);
+					deletePasteAction(paste, null, isSkip);
 				
 				break;
 				
 			case COPY_ACTION :
-				LogCopy copy = (LogCopy)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, copy.getText(), "Copy action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogCopy copy = (LogCopy)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, copy.getText(), "Copy action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case COMPILE_ACTION :
-				LogCompile compile = (LogCompile)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, compile.getText(), "Compile action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogCompile compile = (LogCompile)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, compile.getText(), "Compile action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case RUN_ACTION :
-				LogRun run = (LogRun)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, run.getText(), "Run action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogRun run = (LogRun)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, run.getText(), "Run action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 				
 			case SAVE_ACTION :
-				LogSaveFile save = (LogSaveFile)sameItems.get(0);
-				JOptionPane.showMessageDialog(textArea, save.getPath(), "Save action", JOptionPane.INFORMATION_MESSAGE);
+				if(!isSkip) {
+					LogSaveFile save = (LogSaveFile)sameItems.get(0);
+					JOptionPane.showMessageDialog(textArea, save.getPath(), "Save action", JOptionPane.INFORMATION_MESSAGE);
+				}
 				break;
 		}
 	}
 	
 	private static void pressServiceKey(ArrayList<LogItem> serviceItems) {
-		log.info("IN PRESS SERVICE KEY");
-		for(LogItem item : serviceItems) {
-			try {
-                log.info(mapper.writeValueAsString(item));
-            } catch (Exception e) {
-                Log.log(Log.ERROR, null, "Cannot write copy action to json", e);
-            }
-		}
-		log.info("");
-		log.info("");
-		
-		Robot robot = null;		
-		try {
-			robot = new Robot();
-		} catch (AWTException e) {
-			log.info("Error while creating robot for simulate pressing service key");
-			return;
-		}
-		
-		for(LogItem item : serviceItems) {
-			LogServiceKey serviceItem = (LogServiceKey)item;
-			textArea.setCaretPosition(getCaretForServiceKey(serviceItem));
-			if(isDeletedKey(serviceItem.getKeyCode()))
-				buffer.remove(serviceItem.getDeletedCharPosition(), serviceItem.getDeletedText().length());
-			else {
-				robot.keyPress(serviceItem.getKeyCode());
-				robot.keyRelease(serviceItem.getKeyCode());
+		LogServiceKey servItem = (LogServiceKey)serviceItems.get(serviceItems.size() - 1);
+		if(isDeletedKey(servItem.getKeyCode())) {
+			for(LogItem item : serviceItems) {
+				LogServiceKey serviceItem = (LogServiceKey)item;
+				textArea.setCaretPosition(getCaretForServiceKey(serviceItem));
+				if(isDeletedKey(serviceItem.getKeyCode()))
+					buffer.remove(serviceItem.getDeletedCharPosition(), serviceItem.getDeletedText().length());
 			}
+		} else {
+			textArea.setCaretPosition(getCaretForServiceKey(servItem));
 		}
 	}
 	
-	private static boolean isDeletedKey(final int keyCode) {
+	public static boolean isDeletedKey(final int keyCode) {
 		return keyCode == KeyEvent.VK_DELETE || keyCode == KeyEvent.VK_BACK_SPACE;
 	}
 	
@@ -439,10 +390,7 @@ public class ParseUtil {
 	
 	private static int getCaretForServiceKey(LogServiceKey item)
 	{
-		/*if (item.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-			return item.getPosition() + 1;
-		} else*/ 
-			if (buffer.getLength() < item.getPosition()) {
+		if (buffer.getLength() < item.getPosition()) {
 			return buffer.getLength();
 		} else {
 			return item.getPosition();
@@ -454,29 +402,29 @@ public class ParseUtil {
 		textArea.setCaretPosition(item.getStart());
 	}
 	
-	private static void simulatePasteAction(LogPaste item, LogItem previousItem) {
+	private static void simulatePasteAction(LogPaste item, LogItem previousItem, boolean isSkip) {
 		if(previousItem != null && previousItem.getType().equals(LogEventTypes.SELECTION))
 			buffer.remove(((LogSelection)previousItem).getStart(), ((LogSelection)previousItem).getSelectedText().length());
 
 		buffer.insert(item.getPosition(), item.getText());
 		textArea.setCaretPosition(item.getPosition() + item.getText().length());
+		
+		if(!isSkip)
+			JOptionPane.showMessageDialog(textArea, item.getText(), "Paste action", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
-	/*private static boolean isTypeSetting(LogItem item) {
-		if(item.getType().equals(arg0))
-	}*/
-	
-	private static void deleteCutAction(ArrayList<LogItem> sameItems) {
+	private static void deleteCutAction(ArrayList<LogItem> sameItems, boolean isSkip) {
 		LogCut cut = (LogCut)sameItems.get(0);
 		int startSelection = cut.getStart();
 		int endSelection = startSelection + cut.getText().length();
 		
 		buffer.insert(startSelection, cut.getText());
 		textArea.setSelection(new Selection.Range(startSelection, endSelection));
-		JOptionPane.showMessageDialog(textArea, cut.getText(), "Cut action", JOptionPane.INFORMATION_MESSAGE);
+		if(!isSkip)
+			JOptionPane.showMessageDialog(textArea, cut.getText(), "Cut action", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
-	private static void deletePasteAction(LogPaste item, LogItem previousItem) {
+	private static void deletePasteAction(LogPaste item, LogItem previousItem, boolean isSkip) {
 		buffer.remove(item.getPosition(), item.getText().length());
 		
 		if(previousItem != null && previousItem.getType().equals(LogEventTypes.SELECTION)) {
@@ -486,6 +434,9 @@ public class ParseUtil {
 			buffer.insert(start, text);
 			textArea.setSelection(new Selection.Range(start, end));
 		}
+		
+		if(!isSkip)
+			JOptionPane.showMessageDialog(textArea, item.getText(), "Paste action", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
 	private static void deleteCharKey(ArrayList<LogItem> sameItems) {
@@ -500,21 +451,28 @@ public class ParseUtil {
 	
 	private static void deleteServiceKey(ArrayList<LogItem> sameItems) {
 		int size = sameItems.size();
-		for(int i = size-1; i >= 0; i--) {
-			LogServiceKey servItem = (LogServiceKey)sameItems.get(i);
-			if(isDeletedKey(servItem.getKeyCode())) {
+		LogServiceKey item = (LogServiceKey)sameItems.get(0);
+		if(isDeletedKey(item.getKeyCode())) {
+			for(int i = size-1; i >= 0; i--) {
+				LogServiceKey servItem = (LogServiceKey)sameItems.get(i);
+	
 				int start = servItem.getDeletedCharPosition();
 				String deletedText = servItem.getDeletedText();
 				int end = start + deletedText.length();
 				buffer.insert(start, deletedText);
 				if(deletedText.length() > 1)
 					textArea.setSelection(new Selection.Range(start, end));
-			} else {
-				if (buffer.getLength() < servItem.getPosition())
-					textArea.setCaretPosition(buffer.getLength());
-				else
-					textArea.setCaretPosition(servItem.getPosition());
 			}
+		} else {
+			if (buffer.getLength() < item.getPosition())
+				textArea.setCaretPosition(buffer.getLength());
+			else
+				textArea.setCaretPosition(item.getPosition());
 		}
 	}
+	
+	public static int getIterator() {
+		return iterator;
+	}
+	
 }
